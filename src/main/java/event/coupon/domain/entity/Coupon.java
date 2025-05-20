@@ -5,6 +5,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
@@ -12,6 +13,7 @@ import java.math.BigDecimal;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
 public class Coupon {
 
     @Id
@@ -23,4 +25,10 @@ public class Coupon {
     Long discountPercent;
 
     BigDecimal limitDiscountAmount;
+
+    public Coupon(String couponName, long discountPercent, BigDecimal limitDiscountAmount) {
+        this.couponName = couponName;
+        this.discountPercent = discountPercent;
+        this.limitDiscountAmount = limitDiscountAmount;
+    }
 }

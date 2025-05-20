@@ -1,8 +1,12 @@
 package event.coupon.domain.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 @Entity
+@AllArgsConstructor
+@NoArgsConstructor
 public class CouponStock {
 
     @Id
@@ -16,6 +20,13 @@ public class CouponStock {
     private Long issuedCount;
     private Long usedCount;
 
-//    @Version // 낙관적 락 걸 때 사용. 본 쿠폰이벤트는 비관적 락 사용 예정.
+    public CouponStock(Coupon coupon, Long totalCount, Long issuedCount, Long usedCount) {
+        this.coupon = coupon;
+        this.totalCount = totalCount;
+        this.issuedCount = issuedCount;
+        this.usedCount = usedCount;
+    }
+
+    //    @Version // 낙관적 락 걸 때 사용. 본 쿠폰이벤트는 비관적 락 사용 예정.
 //    private Long version;
 }
