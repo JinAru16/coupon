@@ -42,7 +42,7 @@ class CouponServiceTest {
 
     @Test
     @DisplayName("테스트쿠폰을 조회하는데 성공한다.")
-    void issueCoupon(){
+    void getTestCoupon(){
         //given
         Coupon coupon = repository.findByCouponName("테스트쿠폰");
 
@@ -52,6 +52,18 @@ class CouponServiceTest {
         String couponName = coupon.getCouponName();
         System.out.println("couponName :" + couponName);
         Assertions.assertThat(couponName).isEqualTo("테스트쿠폰");
+
+    }
+
+    @Test
+    @DisplayName("테스트 쿠폰의 발급 가능 수량은 50개다.")
+    void testCouponStock(){
+        //given
+
+        //when
+        stockRepository.findByCouponName("테스트쿠폰");
+
+        //then
 
     }
 
