@@ -38,6 +38,7 @@ public class CouponStock {
         this.usedCount = usedCount;
     }
 
+
     //    @Version // 낙관적 락 걸 때 사용. 본 쿠폰이벤트는 비관적 락 사용 예정.
 //    private Long version;
 }

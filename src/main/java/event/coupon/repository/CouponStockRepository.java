@@ -7,12 +7,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface CouponStockRepository extends JpaRepository<CouponStock, Long> {
 
     @Query("select cs from CouponStock cs JOIN FETCH cs.coupon where cs.coupon.couponName =:couponName")
-    CouponStock findByCouponName(@Param("couponName") String name);
+    Optional<CouponStock> findByCouponName(@Param("couponName") String name);
 
     @Query("select cs from CouponStock cs JOIN FETCH cs.coupon where cs.id =:id")
-    CouponStock findByCouponId(@Param("id") Long id);
+    Optional<CouponStock> findByCouponId(@Param("id") Long id);
 }

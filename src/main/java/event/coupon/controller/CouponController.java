@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 public class CouponController {
     private final CouponService couponService;
     @PostMapping("/{id}/issue")
-    public ResponseEntity<?> publishCoupon(@PathVariable String id) {
+    public ResponseEntity<?> publishCoupon(@PathVariable Long id) {
 
         couponService.publishCoupon(id);
 
