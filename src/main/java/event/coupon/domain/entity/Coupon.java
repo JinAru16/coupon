@@ -1,5 +1,6 @@
 package event.coupon.domain.entity;
 
+import event.coupon.domain.request.CouponRequest;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -33,5 +34,12 @@ public class Coupon {
         this.planedCount = planedCount;
         this.discountPercent = discountPercent;
         this.limitDiscountAmount = limitDiscountAmount;
+    }
+
+    public Coupon(CouponRequest couponRequest){
+        this.couponName = couponRequest.getCouponName();
+        this.planedCount = couponRequest.getPlanedCount();
+        this.discountPercent = couponRequest.getDiscountPercent();
+        this.limitDiscountAmount = couponRequest.getLimitDiscountAmount();
     }
 }

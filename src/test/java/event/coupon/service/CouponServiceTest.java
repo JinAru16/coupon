@@ -2,6 +2,8 @@ package event.coupon.service;
 
 import event.coupon.domain.entity.Coupon;
 import event.coupon.domain.entity.CouponStock;
+import event.coupon.domain.request.CouponRequest;
+import event.coupon.domain.response.GeneratedCoupon;
 import event.coupon.exception.ExceededCouponException;
 import event.coupon.exception.NotValidCouponException;
 import event.coupon.repository.CouponRepository;
@@ -21,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Duration;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -40,6 +43,8 @@ class CouponServiceTest {
 
     Long couponId = 1L;
     String redisKey = "coupon:stock:" + couponId;
+    @Autowired
+    private CouponService couponService;
 
 
     //@BeforeEach
@@ -54,7 +59,7 @@ class CouponServiceTest {
         repository.save(testCoupon);
 
         //테스트 쿠폰은 토탈 50장만 발행한다.
-        CouponStock couponStock = new CouponStock(testCoupon, 50L, 0L, 0L);
+        CouponStock couponStock = new CouponStock(testCoupon,  0L, 0L);
         stockRepository.save(couponStock);
 
         // 레디스에 올라간 쿠폰 수량은 초기화한다.
@@ -73,7 +78,7 @@ class CouponServiceTest {
         //then
         String couponName = coupon.getCouponName();
         System.out.println("couponName :" + couponName);
-        Assertions.assertThat(couponName).isEqualTo("테스트쿠폰");
+        assertThat(couponName).isEqualTo("테스트쿠폰");
 
     }
 
@@ -88,7 +93,7 @@ class CouponServiceTest {
 
         //then
         Long totalCount = stock.getCoupon().getPlanedCount();
-        Assertions.assertThat(totalCount).isEqualTo(50L);
+        assertThat(totalCount).isEqualTo(50L);
     }
 
     @Test
@@ -103,7 +108,7 @@ class CouponServiceTest {
 
         //then
         CouponStock remain = stockRepository.findByCouponId(coupon.getId()).orElseThrow(() -> new NotValidCouponException(coupon.getId()));
-        Assertions.assertThat(remain.getCoupon().getPlanedCount() - remain.getIssuedCount()).isEqualTo(49L);
+        assertThat(remain.getCoupon().getPlanedCount() - remain.getIssuedCount()).isEqualTo(49L);
 
     }
 
@@ -120,7 +125,7 @@ class CouponServiceTest {
         }
 
         //then
-        Assertions.assertThatThrownBy(() -> stock.issueCoupon())
+        assertThatThrownBy(() -> stock.issueCoupon())
                 .isInstanceOf(ExceededCouponException.class);
 
     }
@@ -143,7 +148,27 @@ class CouponServiceTest {
         System.out.println("redisStock : " + redisStock);
 
         //then
-        Assertions.assertThat(redisStock).isEqualTo("10");
+        assertThat(redisStock).isEqualTo("10");
+
+    }
+
+    @Test
+    @DisplayName("쿠폰을 생성하는데 성공한다.")
+    void generateCoupon(){
+        //given
+        CouponRequest request = CouponRequest.builder()
+                                                .couponName("생성된쿠폰")
+                                                .planedCount(10L)
+                                                .discountPercent(20)
+                                                .limitDiscountAmount(BigDecimal.valueOf(20_000))
+                                                .build();
+        //when
+        GeneratedCoupon generatedCoupon = couponService.generateCoupon(request);
+
+        //then
+        System.out.println(generatedCoupon);
+        assertThat(generatedCoupon.getCouponName()).isEqualTo(request.getCouponName());
+        assertThat(generatedCoupon.getPlanedCount()).isEqualTo(request.getPlanedCount());
 
     }
 }

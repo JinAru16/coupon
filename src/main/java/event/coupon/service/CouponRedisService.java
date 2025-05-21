@@ -13,8 +13,10 @@ public class CouponRedisService {
     private final RedisTemplate<String, String> redisTemplate;
 
 
-    public void setCouponStock(Long couponId, Long couponStock){
+    public void generateCoupon(Long couponId, Long plannedCount){
         String redisKey = "coupon:stock:" + couponId;
-        redisTemplate.opsForValue().set(redisKey, String.valueOf(couponStock));
+        redisTemplate.opsForValue().set(redisKey, String.valueOf(plannedCount));
     }
+
+
 }

@@ -43,6 +43,6 @@ public class InsertTestCouponData implements ApplicationRunner {
         //테스트 쿠폰은 토탈 50장만 발행한다.
         CouponStock couponStock = new CouponStock(testCoupon, 0L, 0L);
         stockRepository.save(couponStock);
-        couponRedisService.setCouponStock(testCoupon.getId(), plannedCount);
+        couponRedisService.generateCoupon(testCoupon.getId(), plannedCount);
     }
 }
