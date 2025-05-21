@@ -30,4 +30,8 @@ public class CouponService {
         log.info("현재 남은 쿠폰수량 : {}", couponStock.getCoupon().getPlanedCount() - couponStock.getIssuedCount());
         return new CouponResponse(couponStock.getCoupon());
     }
+
+    public CouponStock setCouponStock(Long couponId){
+        return null;
+    }
 }

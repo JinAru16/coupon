@@ -3,6 +3,7 @@ package event.coupon.service;
 import event.coupon.domain.entity.Coupon;
 import event.coupon.domain.entity.CouponStock;
 import event.coupon.exception.ExceededCouponException;
+import event.coupon.exception.NotValidCouponException;
 import event.coupon.repository.CouponRepository;
 import event.coupon.repository.CouponStockRepository;
 import org.assertj.core.api.Assertions;
@@ -12,10 +13,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Profile;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -31,10 +35,15 @@ class CouponServiceTest {
     @Autowired
     CouponStockRepository stockRepository;
 
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
+
+    Long couponId = 1L;
+    String redisKey = "coupon:stock:" + couponId;
 
 
-    @BeforeEach
-    void setup(){
+    //@BeforeEach
+    void setup() {
         // 테스트 쿠폰 생성
         Coupon testCoupon = new Coupon().builder()
                 .couponName("테스트쿠폰")
@@ -47,6 +56,10 @@ class CouponServiceTest {
         //테스트 쿠폰은 토탈 50장만 발행한다.
         CouponStock couponStock = new CouponStock(testCoupon, 50L, 0L, 0L);
         stockRepository.save(couponStock);
+
+        // 레디스에 올라간 쿠폰 수량은 초기화한다.
+        redisTemplate.delete(redisKey);
+        System.out.println("레디스 키 초기화" + redisTemplate.opsForValue().get(redisKey));
     }
 
     @Test
@@ -71,7 +84,7 @@ class CouponServiceTest {
 
         //when
         Coupon coupon = repository.findByCouponName("테스트쿠폰");
-        CouponStock stock = stockRepository.findByCouponId(coupon.getId());
+        CouponStock stock = stockRepository.findByCouponId(coupon.getId()).orElseThrow(() -> new NotValidCouponException(coupon.getId()));
 
         //then
         Long totalCount = stock.getCoupon().getPlanedCount();
@@ -83,13 +96,13 @@ class CouponServiceTest {
     void issueCoupon(){
         //given
         Coupon coupon = repository.findByCouponName("테스트쿠폰");
-        CouponStock stock = stockRepository.findByCouponId(coupon.getId());
+        CouponStock stock = stockRepository.findByCouponId(coupon.getId()).orElseThrow(() -> new NotValidCouponException(coupon.getId()));
         //when
         stock.issueCoupon();
         stockRepository.save(stock);
 
         //then
-        CouponStock remain = stockRepository.findByCouponId(coupon.getId());
+        CouponStock remain = stockRepository.findByCouponId(coupon.getId()).orElseThrow(() -> new NotValidCouponException(coupon.getId()));
         Assertions.assertThat(remain.getCoupon().getPlanedCount() - remain.getIssuedCount()).isEqualTo(49L);
 
     }
@@ -99,7 +112,7 @@ class CouponServiceTest {
     void overIssuedCouponException(){
         //given
         Coupon coupon = repository.findByCouponName("테스트쿠폰");
-        CouponStock stock = stockRepository.findByCouponId(coupon.getId());
+        CouponStock stock = stockRepository.findByCouponId(coupon.getId()).orElseThrow(() -> new NotValidCouponException(coupon.getId()));
 
         //when
         for(int i = 0; i < coupon.getPlanedCount(); i++){
@@ -109,6 +122,28 @@ class CouponServiceTest {
         //then
         Assertions.assertThatThrownBy(() -> stock.issueCoupon())
                 .isInstanceOf(ExceededCouponException.class);
+
+    }
+
+    @Test
+    @DisplayName("쿠폰 재고를 레디스에 등록")
+    void setCouponStock(){
+
+        // 캐시 초기화 된건지 확인해보자.
+        redisTemplate.delete(redisKey);
+        System.out.println("rediskey: "+redisKey+ ":"+ redisTemplate.opsForValue().get(redisKey));
+
+        //given
+        redisTemplate.opsForValue().set(redisKey, String.valueOf(10), Duration.ofHours(1));
+
+
+        //when
+
+        String redisStock = redisTemplate.opsForValue().get(redisKey);
+        System.out.println("redisStock : " + redisStock);
+
+        //then
+        Assertions.assertThat(redisStock).isEqualTo("10");
 
     }
 }

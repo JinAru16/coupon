@@ -1,5 +1,6 @@
 package event.coupon.controller;
 
+import event.coupon.domain.response.CouponResponse;
 import event.coupon.service.CouponService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -13,10 +14,10 @@ public class CouponController {
     @PostMapping("/{id}/issue")
     public ResponseEntity<?> publishCoupon(@PathVariable Long id) {
 
-        couponService.publishCoupon(id);
+        CouponResponse couponResponse = couponService.publishCoupon(id);
 
-
-        return ResponseEntity.ok().build();
+        return ResponseEntity
+                .ok()
+                .body(couponResponse);
     }
-
 }
