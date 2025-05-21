@@ -2,6 +2,7 @@ package event.coupon.service;
 
 import event.coupon.domain.entity.Coupon;
 import event.coupon.domain.entity.CouponStock;
+import event.coupon.exception.ExceededCouponException;
 import event.coupon.repository.CouponRepository;
 import event.coupon.repository.CouponStockRepository;
 import org.assertj.core.api.Assertions;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Profile;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -29,15 +31,22 @@ class CouponServiceTest {
     @Autowired
     CouponStockRepository stockRepository;
 
+
+
     @BeforeEach
     void setup(){
         // 테스트 쿠폰 생성
-        Coupon testCoupon = new Coupon("테스트쿠폰", 20L, BigDecimal.valueOf(20_000));
+        Coupon testCoupon = new Coupon().builder()
+                .couponName("테스트쿠폰")
+                .planedCount(50L)
+                .discountPercent(20)
+                .limitDiscountAmount(BigDecimal.valueOf(20_000))
+                .build();
         repository.save(testCoupon);
 
         //테스트 쿠폰은 토탈 50장만 발행한다.
-        new CouponStock(testCoupon, 50L, 0L, 0L);
-        stockRepository.save(new CouponStock());
+        CouponStock couponStock = new CouponStock(testCoupon, 50L, 0L, 0L);
+        stockRepository.save(couponStock);
     }
 
     @Test
@@ -61,10 +70,45 @@ class CouponServiceTest {
         //given
 
         //when
-        stockRepository.findByCouponName("테스트쿠폰");
+        Coupon coupon = repository.findByCouponName("테스트쿠폰");
+        CouponStock stock = stockRepository.findByCouponId(coupon.getId());
 
         //then
+        Long totalCount = stock.getCoupon().getPlanedCount();
+        Assertions.assertThat(totalCount).isEqualTo(50L);
+    }
+
+    @Test
+    @DisplayName("쿠폰을 한장 발급받으면 쿠폰 재고 수량은 49장이 된다.")
+    void issueCoupon(){
+        //given
+        Coupon coupon = repository.findByCouponName("테스트쿠폰");
+        CouponStock stock = stockRepository.findByCouponId(coupon.getId());
+        //when
+        stock.issueCoupon();
+        stockRepository.save(stock);
+
+        //then
+        CouponStock remain = stockRepository.findByCouponId(coupon.getId());
+        Assertions.assertThat(remain.getCoupon().getPlanedCount() - remain.getIssuedCount()).isEqualTo(49L);
 
     }
 
+    @Test
+    @DisplayName("쿠폰 발급수량을 초과하면 ExceededCouponException이 발생한다.")
+    void overIssuedCouponException(){
+        //given
+        Coupon coupon = repository.findByCouponName("테스트쿠폰");
+        CouponStock stock = stockRepository.findByCouponId(coupon.getId());
+
+        //when
+        for(int i = 0; i < coupon.getPlanedCount(); i++){
+            stock.issueCoupon();
+        }
+
+        //then
+        Assertions.assertThatThrownBy(() -> stock.issueCoupon())
+                .isInstanceOf(ExceededCouponException.class);
+
+    }
 }

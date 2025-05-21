@@ -1,12 +1,17 @@
 package event.coupon.domain.entity;
 
+import event.coupon.exception.ExceededCouponException;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
+@Getter
 public class CouponStock {
 
     @Id
@@ -16,13 +21,19 @@ public class CouponStock {
     @OneToOne
     Coupon coupon;
 
-    private Long totalCount;
-    private Long issuedCount;
-    private Long usedCount;
+    private Long issuedCount; // 발행된 쿠폰수량
+    private Long usedCount;  // 사용한 쿠폰 수량.
+
+    public void issueCoupon(){
+        if(issuedCount < coupon.getPlanedCount()){
+            this.issuedCount += 1;
+        } else{
+            throw new ExceededCouponException(coupon.getPlanedCount().toString());
+        }
+    }
 
     public CouponStock(Coupon coupon, Long totalCount, Long issuedCount, Long usedCount) {
         this.coupon = coupon;
-        this.totalCount = totalCount;
         this.issuedCount = issuedCount;
         this.usedCount = usedCount;
     }

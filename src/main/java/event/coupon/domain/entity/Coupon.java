@@ -4,9 +4,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 
@@ -14,20 +12,25 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@ToString
 public class Coupon {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
-    Long id;
+    private Long id;
 
-    String couponName;
+    private String couponName;
 
-    Long discountPercent;
+    private Long planedCount; // 발행될 전체 쿠폰수량.
 
-    BigDecimal limitDiscountAmount;
+    private int discountPercent;
 
-    public Coupon(String couponName, long discountPercent, BigDecimal limitDiscountAmount) {
+    private BigDecimal limitDiscountAmount;
+
+    @Builder
+    public Coupon(String couponName, Long planedCount, int discountPercent, BigDecimal limitDiscountAmount) {
         this.couponName = couponName;
+        this.planedCount = planedCount;
         this.discountPercent = discountPercent;
         this.limitDiscountAmount = limitDiscountAmount;
     }
