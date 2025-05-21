@@ -32,7 +32,7 @@ public class CouponStock {
         }
     }
 
-    public CouponStock(Coupon coupon, Long totalCount, Long issuedCount, Long usedCount) {
+    public CouponStock(Coupon coupon, Long issuedCount, Long usedCount) {
         this.coupon = coupon;
         this.issuedCount = issuedCount;
         this.usedCount = usedCount;
