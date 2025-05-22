@@ -1,4 +1,4 @@
-package event.coupon;
+package event.setting;
 
 import event.coupon.domain.entity.Coupon;
 import event.coupon.domain.entity.CouponStock;
