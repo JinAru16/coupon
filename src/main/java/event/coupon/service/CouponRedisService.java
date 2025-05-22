@@ -22,6 +22,11 @@ public class CouponRedisService {
         redisTemplate.opsForValue().set(redisKey, String.valueOf(plannedCount));
     }
 
+    public void restockCoupon(Long couponId, Long plannedCount){
+        String redisKey = "coupon:stock:" + couponId;
+        redisTemplate.opsForValue().increment(redisKey, plannedCount);
+    }
+
 
     public TryAcquireStatus tryAcquire(Long couponId, Long userId) {
         String stockKey = RedisKeyPrefix.STOCK_KEY.of(couponId);

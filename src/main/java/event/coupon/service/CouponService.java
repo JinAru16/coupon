@@ -56,4 +56,18 @@ public class CouponService {
         couponRedisService.generateCoupon(coupon.getId(), coupon.getPlanedCount());
         return new GeneratedCoupon(coupon, stock);
     }
+
+    public void restockCoupon(Long id, Long plannedCount){
+        CouponStock couponStock = couponStockRepository.findByCouponId(id)
+                .orElseThrow(() -> new NotValidCouponException(id));
+        Coupon couponToRestock = couponStock.getCoupon();
+        couponToRestock.restockCoupon(plannedCount);
+
+        couponRepository.save(couponToRestock);
+
+        couponRedisService.restockCoupon(id, plannedCount);
+
+
+
+    }
 }

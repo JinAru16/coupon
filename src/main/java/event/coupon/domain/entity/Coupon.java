@@ -28,6 +28,10 @@ public class Coupon {
 
     private BigDecimal limitDiscountAmount;
 
+    public void restockCoupon(Long count){
+        this.planedCount += count;
+    }
+
     @Builder
     public Coupon(String couponName, Long planedCount, int discountPercent, BigDecimal limitDiscountAmount) {
         this.couponName = couponName;

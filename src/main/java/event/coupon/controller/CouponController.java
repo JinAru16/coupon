@@ -28,4 +28,9 @@ public class CouponController {
                 .ok()
                 .body(couponResponse);
     }
+
+    @PutMapping("/coupon/{id}")
+    public void restockCoupon(@PathVariable Long id, @RequestParam("plannedCount") Long plannedCount){
+        couponService.restockCoupon(id, plannedCount);
+    }
 }
