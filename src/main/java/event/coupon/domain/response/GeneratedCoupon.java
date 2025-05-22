@@ -11,6 +11,8 @@ import java.math.BigDecimal;
 @ToString
 public class GeneratedCoupon {
 
+    private Long couponId;
+
     private String couponName;
 
     private Long planedCount; // 발행될 전체 쿠폰수량.
@@ -23,6 +25,7 @@ public class GeneratedCoupon {
     private Long usedCount;  // 사용한 쿠폰 수량.
 
     public GeneratedCoupon(Coupon coupon, CouponStock couponStock){
+        this.couponId = coupon.getId();
         this.couponName = coupon.getCouponName();
         this.planedCount = coupon.getPlanedCount();
         this.discountPercent = coupon.getDiscountPercent();

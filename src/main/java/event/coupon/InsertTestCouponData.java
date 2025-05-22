@@ -31,13 +31,15 @@ public class InsertTestCouponData implements ApplicationRunner {
         // 테스트 쿠폰 생성
         new Coupon();
         Coupon testCoupon = Coupon.builder()
-                .couponName("테스트쿠폰")
+                .couponName("테스트쿠폰123")
                 .planedCount(plannedCount)
-                .discountPercent(20)
+                .discountPercent(3)
                 .limitDiscountAmount(BigDecimal.valueOf(20_000))
                 .build();
         Coupon save = couponRepository.save(testCoupon);
-        redisTemplate.delete("coupon:stock:" + save.getId());
+        Boolean delete = redisTemplate.delete("coupon:stock:" + save.getId());
+        Boolean delete2 = redisTemplate.delete("coupon:issued:" + save.getId());
+        System.out.println("deleted : "+ delete);
 
 
         //테스트 쿠폰은 토탈 50장만 발행한다.

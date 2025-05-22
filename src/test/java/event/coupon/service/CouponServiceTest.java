@@ -164,11 +164,35 @@ class CouponServiceTest {
                                                 .build();
         //when
         GeneratedCoupon generatedCoupon = couponService.generateCoupon(request);
+        String redisStock = redisTemplate.opsForValue().get("coupon:stock:" + generatedCoupon.getCouponId());
 
         //then
         System.out.println(generatedCoupon);
         assertThat(generatedCoupon.getCouponName()).isEqualTo(request.getCouponName());
         assertThat(generatedCoupon.getPlanedCount()).isEqualTo(request.getPlanedCount());
+
+        // 레디스 검증.
+        assertThat(redisStock).isEqualTo(request.getPlanedCount().toString());
+
+
+    }
+
+    @Test
+    @DisplayName("여러명의 각기 다른 사람이 쿠폰을 발급받는데 성공함.")
+    void issueCouponTest(){
+        //given
+
+
+        //when
+        for(int i=0; i<10; i++){
+            System.out.println("userid : "+ i);
+            couponService.issueCoupon(1L, (long) i);
+        }
+
+        //then
+        assertThatThrownBy(() ->  couponService.issueCoupon(1L, 11L)).isInstanceOf(ExceededCouponException.class);
+
+
 
     }
 }
