@@ -13,13 +13,13 @@ import event.coupon.repository.CouponStockRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 @Slf4j
 public class CouponService {
 
@@ -28,6 +28,7 @@ public class CouponService {
     private final CouponStockRepository couponStockRepository;
 
     /* 사용자가 쿠폰을 발급받음*/
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public CouponResponse issueCoupon(Long id, Long userId) {
 
         TryAcquireStatus tryAcquireStatus = couponRedisService.tryAcquire(id, userId);

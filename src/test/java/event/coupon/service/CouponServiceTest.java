@@ -28,6 +28,7 @@ import static org.assertj.core.api.Assertions.*;
 
 @Profile("test")
 @SpringBootTest
+@Transactional
 class CouponServiceTest {
 
     @Autowired
@@ -39,13 +40,13 @@ class CouponServiceTest {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
-    @PersistenceContext
-    EntityManager em;
-
     long couponId = 2L;
     String redisKey = "coupon:stock:" + couponId;
     @Autowired
     private CouponService couponService;
+
+    @Autowired
+    private EntityManager em;
 
 
     @BeforeEach
@@ -214,13 +215,15 @@ class CouponServiceTest {
         latch.await(); // 모든 스레드 종료 대기
 
         //then
+        // DB 상태도 확인
+        em.flush(); // 변경사항 DB에 반영
+        em.clear(); // 1차 캐시 비우고 진짜 DB 조회
 
         // Redis 대기열에 들어간 유저 수 == 발급된 수
         System.out.println(RedisKeyPrefix.STOCK_KEY.of(couponId));
         String remain = redisTemplate.opsForValue().get(RedisKeyPrefix.STOCK_KEY.of(couponId));
         assertThat(remain).isEqualTo("0");
 
-        // DB 상태도 확인
 
         CouponStock stock = stockRepository.findByCouponId(couponId).orElseThrow();
         System.out.println(stock);
