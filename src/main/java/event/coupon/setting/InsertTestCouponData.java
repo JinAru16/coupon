@@ -42,7 +42,7 @@ public class InsertTestCouponData implements ApplicationRunner {
         CouponRequest testCoupon = CouponRequest.builder()
                 .couponName("테스트쿠폰123")
                 .planedCount(plannedCount)
-                .discountPercent(3)
+                .discountPercent(20)
                 .limitDiscountAmount(BigDecimal.valueOf(20_000))
                 .build();
         GeneratedCoupon generatedCoupon = couponService.generateCoupon(testCoupon);

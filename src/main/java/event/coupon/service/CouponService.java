@@ -32,19 +32,15 @@ public class CouponService {
 
         TryAcquireStatus tryAcquireStatus = couponRedisService.tryAcquire(id, userId);
 
+        System.out.println("tryAcquireStatus : " + tryAcquireStatus);
+
         if (tryAcquireStatus.equals(TryAcquireStatus.REMAIN)) {
-
-
-//            CouponStock couponStock = couponStockRepository.findByCouponId(id)
-//                    .orElseThrow(() -> new NotValidCouponException(id));
 
             CouponStock couponStock = couponStockRepository.findByCouponIdForUpdate(id)
                     .orElseThrow(() -> new NotValidCouponException(id));
 
             couponStock.issueCoupon();
-            System.out.println("issuedCount : " + couponStock.getIssuedCount());
             couponStockRepository.save(couponStock);
-
             return new CouponResponse(couponStock.getCoupon());
         } else{
             throw new ExceededCouponException();

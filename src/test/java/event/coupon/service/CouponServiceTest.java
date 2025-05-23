@@ -1,5 +1,6 @@
 package event.coupon.service;
 
+import event.coupon.domain.RedisKeyPrefix;
 import event.coupon.domain.entity.Coupon;
 import event.coupon.domain.entity.CouponStock;
 import event.coupon.domain.request.CouponRequest;
@@ -10,9 +11,7 @@ import event.coupon.repository.CouponRepository;
 import event.coupon.repository.CouponStockRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Profile;
@@ -29,7 +28,6 @@ import static org.assertj.core.api.Assertions.*;
 
 @Profile("test")
 @SpringBootTest
-@Transactional
 class CouponServiceTest {
 
     @Autowired
@@ -44,19 +42,14 @@ class CouponServiceTest {
     @PersistenceContext
     EntityManager em;
 
-    long couponId = 1L;
+    long couponId = 2L;
     String redisKey = "coupon:stock:" + couponId;
     @Autowired
     private CouponService couponService;
 
 
-   // @BeforeEach
+    @BeforeEach
     void setup() {
-        // 레디스에 올라간 쿠폰 수량은 초기화한다.
-        redisTemplate.execute((RedisCallback<Void>) connection -> {
-            connection.serverCommands().flushDb(); // 🔥 현재 선택된 Redis DB 전체 삭제
-            return null;
-        });
         // 테스트 쿠폰 생성
         CouponRequest testCoupon = CouponRequest.builder()
                 .couponName("테스트쿠폰")
@@ -65,7 +58,17 @@ class CouponServiceTest {
                 .limitDiscountAmount(BigDecimal.valueOf(20_000))
                 .build();
         GeneratedCoupon generatedCoupon = couponService.generateCoupon(testCoupon);
-        System.out.println("before : " + generatedCoupon);
+        System.out.println("settingDB : " + generatedCoupon);
+        System.out.println("redisStock : " + redisTemplate.opsForValue().get("coupon:stock:" + generatedCoupon.getCouponId()));
+    }
+
+    @AfterEach
+    void deleteRedisCached(){
+        // 레디스에 올라간 쿠폰 수량은 초기화한다.
+        redisTemplate.execute((RedisCallback<Void>) connection -> {
+            connection.serverCommands().flushDb(); // 🔥 현재 선택된 Redis DB 전체 삭제
+            return null;
+        });
     }
 
     @Test
@@ -213,11 +216,12 @@ class CouponServiceTest {
         //then
 
         // Redis 대기열에 들어간 유저 수 == 발급된 수
-//        Long issuedCount = redisTemplate.opsForList().size("coupon:queue:" + couponId);
-//        assertThat(issuedCount).isEqualTo(10);
+        System.out.println(RedisKeyPrefix.STOCK_KEY.of(couponId));
+        String remain = redisTemplate.opsForValue().get(RedisKeyPrefix.STOCK_KEY.of(couponId));
+        assertThat(remain).isEqualTo("0");
 
         // DB 상태도 확인
-        //em.clear();
+
         CouponStock stock = stockRepository.findByCouponId(couponId).orElseThrow();
         System.out.println(stock);
         assertThat(stock.getIssuedCount()).isEqualTo(10);

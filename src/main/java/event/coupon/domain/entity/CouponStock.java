@@ -27,6 +27,7 @@ public class CouponStock {
     public void issueCoupon(){
         if(issuedCount < coupon.getPlanedCount()){
             this.issuedCount += 1;
+
         } else{
             throw new ExceededCouponException(coupon.getPlanedCount().toString());
         }
