@@ -15,6 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -29,16 +31,20 @@ public class CouponService {
     public CouponResponse issueCoupon(Long id, Long userId) {
 
         TryAcquireStatus tryAcquireStatus = couponRedisService.tryAcquire(id, userId);
-        System.out.println("try : " + tryAcquireStatus);
 
-        if (tryAcquireStatus == TryAcquireStatus.REMAIN) {
-            CouponStock couponStock = couponStockRepository.findByCouponId(id)
+        if (tryAcquireStatus.equals(TryAcquireStatus.REMAIN)) {
+
+
+//            CouponStock couponStock = couponStockRepository.findByCouponId(id)
+//                    .orElseThrow(() -> new NotValidCouponException(id));
+
+            CouponStock couponStock = couponStockRepository.findByCouponIdForUpdate(id)
                     .orElseThrow(() -> new NotValidCouponException(id));
 
             couponStock.issueCoupon();
+            System.out.println("issuedCount : " + couponStock.getIssuedCount());
             couponStockRepository.save(couponStock);
 
-            log.info("현재 남은 쿠폰수량 : {}", couponStock.getCoupon().getPlanedCount() - couponStock.getIssuedCount());
             return new CouponResponse(couponStock.getCoupon());
         } else{
             throw new ExceededCouponException();
@@ -54,6 +60,7 @@ public class CouponService {
         CouponStock stock = couponStockRepository.save(couponStock);
 
         couponRedisService.generateCoupon(coupon.getId(), coupon.getPlanedCount());
+
         return new GeneratedCoupon(coupon, stock);
     }
 
@@ -66,8 +73,5 @@ public class CouponService {
         couponRepository.save(couponToRestock);
 
         couponRedisService.restockCoupon(id, plannedCount);
-
-
-
     }
 }

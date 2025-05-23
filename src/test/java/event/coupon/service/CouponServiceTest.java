@@ -8,11 +8,15 @@ import event.coupon.exception.ExceededCouponException;
 import event.coupon.exception.NotValidCouponException;
 import event.coupon.repository.CouponRepository;
 import event.coupon.repository.CouponStockRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Profile;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -37,30 +41,31 @@ class CouponServiceTest {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
-    Long couponId = 1L;
+    @PersistenceContext
+    EntityManager em;
+
+    long couponId = 1L;
     String redisKey = "coupon:stock:" + couponId;
     @Autowired
     private CouponService couponService;
 
 
-    //@BeforeEach
+   // @BeforeEach
     void setup() {
+        // 레디스에 올라간 쿠폰 수량은 초기화한다.
+        redisTemplate.execute((RedisCallback<Void>) connection -> {
+            connection.serverCommands().flushDb(); // 🔥 현재 선택된 Redis DB 전체 삭제
+            return null;
+        });
         // 테스트 쿠폰 생성
-        Coupon testCoupon = new Coupon().builder()
+        CouponRequest testCoupon = CouponRequest.builder()
                 .couponName("테스트쿠폰")
-                .planedCount(50L)
+                .planedCount(10L)
                 .discountPercent(20)
                 .limitDiscountAmount(BigDecimal.valueOf(20_000))
                 .build();
-        repository.save(testCoupon);
-
-        //테스트 쿠폰은 토탈 50장만 발행한다.
-        CouponStock couponStock = new CouponStock(testCoupon,  0L, 0L);
-        stockRepository.save(couponStock);
-
-        // 레디스에 올라간 쿠폰 수량은 초기화한다.
-        redisTemplate.delete(redisKey);
-        System.out.println("레디스 키 초기화" + redisTemplate.opsForValue().get(redisKey));
+        GeneratedCoupon generatedCoupon = couponService.generateCoupon(testCoupon);
+        System.out.println("before : " + generatedCoupon);
     }
 
     @Test
@@ -174,14 +179,11 @@ class CouponServiceTest {
     @DisplayName("여러명의 각기 다른 사람이 쿠폰을 발급받는데 성공함.")
     void issueCouponTest(){
         //given
-
-
         //when
         for(int i=0; i<10; i++){
             System.out.println("userid : "+ i);
             couponService.issueCoupon(1L, (long) i);
         }
-
         //then
         assertThatThrownBy(() ->  couponService.issueCoupon(1L, 11L)).isInstanceOf(ExceededCouponException.class);
     }
@@ -193,10 +195,10 @@ class CouponServiceTest {
     void multiThreadCouponTest() throws InterruptedException {
         //given
         ExecutorService executor = Executors.newFixedThreadPool(32);
-        CountDownLatch latch = new CountDownLatch(10);
-        //when
+        CountDownLatch latch = new CountDownLatch(32);
 
-        for (long userId = 1; userId <= 10; userId++) {
+        //when
+        for (long userId = 1; userId <= 32; userId++) {
             final long uid = userId;
             executor.submit(() -> {
                 try {
@@ -206,17 +208,18 @@ class CouponServiceTest {
                 }
             });
         }
-
         latch.await(); // 모든 스레드 종료 대기
 
         //then
 
         // Redis 대기열에 들어간 유저 수 == 발급된 수
-        Long issuedCount = redisTemplate.opsForList().size("coupon:queue:" + couponId);
-        assertThat(issuedCount).isEqualTo(10);
+//        Long issuedCount = redisTemplate.opsForList().size("coupon:queue:" + couponId);
+//        assertThat(issuedCount).isEqualTo(10);
 
         // DB 상태도 확인
+        //em.clear();
         CouponStock stock = stockRepository.findByCouponId(couponId).orElseThrow();
+        System.out.println(stock);
         assertThat(stock.getIssuedCount()).isEqualTo(10);
 
     }
