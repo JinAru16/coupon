@@ -20,6 +20,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 @Slf4j
 public class CouponService {
 
@@ -28,12 +29,9 @@ public class CouponService {
     private final CouponStockRepository couponStockRepository;
 
     /* 사용자가 쿠폰을 발급받음*/
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public CouponResponse issueCoupon(Long id, Long userId) {
 
         TryAcquireStatus tryAcquireStatus = couponRedisService.tryAcquire(id, userId);
-
-        System.out.println("tryAcquireStatus : " + tryAcquireStatus);
 
         if (tryAcquireStatus.equals(TryAcquireStatus.REMAIN)) {
 
