@@ -17,12 +17,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.test.annotation.Commit;
+import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -53,7 +56,7 @@ class CouponServiceTest {
     void setup() {
         // 테스트 쿠폰 생성
         CouponRequest testCoupon = CouponRequest.builder()
-                .couponName("테스트쿠폰")
+                .couponName("커밋 쿠폰222")
                 .planedCount(10L)
                 .discountPercent(20)
                 .limitDiscountAmount(BigDecimal.valueOf(20_000))
@@ -61,6 +64,10 @@ class CouponServiceTest {
         GeneratedCoupon generatedCoupon = couponService.generateCoupon(testCoupon);
         System.out.println("settingDB : " + generatedCoupon);
         System.out.println("redisStock : " + redisTemplate.opsForValue().get("coupon:stock:" + generatedCoupon.getCouponId()));
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();     // 커밋!
+        TestTransaction.start();   // 새로운 트랜잭션 시작
     }
 
     @AfterEach
@@ -215,10 +222,6 @@ class CouponServiceTest {
         latch.await(); // 모든 스레드 종료 대기
 
         //then
-        // DB 상태도 확인
-        em.flush(); // 변경사항 DB에 반영
-        em.clear(); // 1차 캐시 비우고 진짜 DB 조회
-
         // Redis 대기열에 들어간 유저 수 == 발급된 수
         System.out.println(RedisKeyPrefix.STOCK_KEY.of(couponId));
         String remain = redisTemplate.opsForValue().get(RedisKeyPrefix.STOCK_KEY.of(couponId));
